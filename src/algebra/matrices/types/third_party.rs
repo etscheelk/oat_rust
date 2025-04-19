@@ -22,6 +22,7 @@
 //! let eye =   vec![ (0,0,1), (1,1,1) ].into_csr(2,2);
 //! ```
 
+use crate::algebra::matrices::operations::umatch::row_major::ParetoShortCircuit;
 use crate::algebra::matrices::query::{ViewRowAscend, IndicesAndCoefficients, MatrixEntry, MatrixOracle, column_helper::SparseColumn};
 
 use std::iter::Rev;
@@ -475,6 +476,23 @@ impl < N, I, IptrStorage, IndStorage, DataStorage, Iptr >
             )
     }
 }  
+
+impl<N, I, IptrStorage, IndStorage, DataStorage, Iptr> 
+ParetoShortCircuit<(I, N)> for 
+VectorIteratorArc<N, I, IptrStorage, IndStorage, DataStorage, Iptr>
+where
+    N: Clone,
+    I: SpIndex,
+    Iptr: SpIndex,
+    IptrStorage: Deref<Target = [Iptr]>,
+    IndStorage: Deref<Target = [I]>,
+    DataStorage: Deref<Target = [N]>,
+{
+    fn pareto_short_circuit(& self) -> Option<(I, N)> 
+    {
+        None
+    }
+}
 
 //  INDICES AND COEFFICIENTS
 //  ------------------------
