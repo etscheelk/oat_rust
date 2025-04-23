@@ -23,6 +23,7 @@
 //! ```
 
 use crate::algebra::matrices::operations::umatch::row_major::ParetoShortCircuit;
+use crate::algebra::matrices::query::ViewColDescend;
 use crate::algebra::matrices::query::{ViewRowAscend, IndicesAndCoefficients, MatrixEntry, MatrixOracle, column_helper::SparseColumn};
 
 use std::iter::Rev;
@@ -439,6 +440,7 @@ impl < 'a, N, I, IptrStorage, IndStorage, DataStorage, Iptr >
 
 /// A wrapper for the `sprs` struct `VectorIterator<'a, N, I >`, which returns
 /// `(usize, N)` instead of `(usize, &N)`
+#[derive(Clone)]
 pub struct VectorIteratorArc
             < N, I, IptrStorage, IndStorage, DataStorage, Iptr > 
     where
@@ -488,9 +490,14 @@ where
     IndStorage: Deref<Target = [I]>,
     DataStorage: Deref<Target = [N]>,
 {
-    fn pareto_short_circuit(& self) -> Option<(I, N)> 
+    fn pareto_short_circuit(&self) -> Option<(I, N)> 
     {
-        None
+        if self.range.len() == 0 {
+            None
+        } else {
+            Some( ( self.matrix.indices()[ self.range.start ], self.matrix.data()[ self.range.start ].clone() ) )
+        }
+        // None
     }
 }
 
@@ -546,6 +553,28 @@ impl < N, I, IptrStorage, IndStorage, DataStorage, Iptr >
 
     fn view_major_ascend( &self, keymaj: usize ) -> Self::ViewMajorAscend {
         let range = self.indptr().outer_inds_sz( keymaj );
+        VectorIteratorArc{ matrix: self.clone(), range }
+    }
+}
+
+impl<N, I, IptrStorage, IndStorage, DataStorage, Iptr>
+ViewColDescend for 
+Arc<CsMatBase<N, I, IptrStorage, IndStorage, DataStorage, Iptr>>
+where
+    N: Clone,
+    I: SpIndex,
+    Iptr: SpIndex,
+    IptrStorage: Deref<Target = [Iptr]>,
+    IndStorage: Deref<Target = [I]>,
+    DataStorage: Deref<Target = [N]>,
+{
+    type ViewMinorDescend = VectorIteratorArc<N, I, IptrStorage, IndStorage, DataStorage, Iptr>;
+
+    type ViewMinorDescendIntoIter = Self::ViewMinorDescend;
+
+    fn view_minor_descend( &self, index: Self::ColIndex ) -> Self::ViewMinorDescend 
+    {
+        let range = self.indptr().outer_inds_sz( index );
         VectorIteratorArc{ matrix: self.clone(), range }
     }
 }
